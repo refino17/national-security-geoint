@@ -5,6 +5,8 @@ import { supabase } from "../services/supabaseClient"
 function Threats() {
   const [title, setTitle] = useState("")
   const [location, setLocation] = useState("")
+  const [latitude, setLatitude] = useState("")
+  const [longitude, setLongitude] = useState("")
   const [priority, setPriority] = useState("Medium")
   const [status, setStatus] = useState("Open")
   const [description, setDescription] = useState("")
@@ -62,8 +64,8 @@ function Threats() {
       return
     }
 
-    if (!title || !location) {
-      setMessage("Please enter threat title and location.")
+    if (!title || !location || !latitude || !longitude) {
+      setMessage("Please enter title, location, latitude and longitude.")
       return
     }
 
@@ -80,6 +82,8 @@ function Threats() {
     const { error } = await supabase.from("threats").insert({
       title,
       location,
+      latitude: Number(latitude),
+      longitude: Number(longitude),
       priority,
       status,
       description,
@@ -99,6 +103,8 @@ function Threats() {
     setMessage("Threat created successfully.")
     setTitle("")
     setLocation("")
+    setLatitude("")
+    setLongitude("")
     setPriority("Medium")
     setStatus("Open")
     setDescription("")
@@ -136,7 +142,7 @@ function Threats() {
       </h1>
 
       <p className="text-slate-400 mb-8">
-        Create, monitor, classify and update operational threat records.
+        Create, monitor, classify and update operational threat records with geospatial coordinates.
       </p>
 
       <div className="grid md:grid-cols-4 gap-5 mb-8">
@@ -169,7 +175,21 @@ function Threats() {
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Location"
+              placeholder="Location e.g. Lagos, Nigeria"
+              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
+            />
+
+            <input
+              value={latitude}
+              onChange={(e) => setLatitude(e.target.value)}
+              placeholder="Latitude e.g. 6.5244"
+              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
+            />
+
+            <input
+              value={longitude}
+              onChange={(e) => setLongitude(e.target.value)}
+              placeholder="Longitude e.g. 3.3792"
               className="p-3 rounded-xl bg-slate-800 text-white outline-none"
             />
 
@@ -230,6 +250,7 @@ function Threats() {
             <tr>
               <th className="text-left p-3">Threat</th>
               <th className="text-left p-3">Location</th>
+              <th className="text-left p-3">Coordinates</th>
               <th className="text-left p-3">Priority</th>
               <th className="text-left p-3">Status</th>
               <th className="text-left p-3">Update</th>
@@ -239,7 +260,7 @@ function Threats() {
           <tbody>
             {threats.length === 0 ? (
               <tr>
-                <td className="p-3 text-slate-500" colSpan="5">
+                <td className="p-3 text-slate-500" colSpan="6">
                   No threat records yet.
                 </td>
               </tr>
@@ -252,6 +273,12 @@ function Threats() {
                   </td>
 
                   <td className="p-3">{threat.location}</td>
+
+                  <td className="p-3 text-slate-400 text-sm">
+                    {threat.latitude && threat.longitude
+                      ? `${threat.latitude}, ${threat.longitude}`
+                      : "Not set"}
+                  </td>
 
                   <td className={`p-3 font-semibold ${priorityColor(threat.priority)}`}>
                     {threat.priority}
