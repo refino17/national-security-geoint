@@ -168,7 +168,7 @@ function Dashboard() {
   useEffect(() => {
     fetchDashboardMetrics()
 
-    const interval = setInterval(() => {
+    const alertsInterval = setInterval(() => {
       const randomAlerts = [
         "Satellite detected suspicious movement",
         "Airspace anomaly detected",
@@ -186,7 +186,41 @@ function Dashboard() {
       ])
     }, 5000)
 
-    return () => clearInterval(interval)
+    const threatChannel = supabase
+      .channel("dashboard-threat-kpis")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "threats",
+        },
+        () => {
+          fetchDashboardMetrics()
+        }
+      )
+      .subscribe()
+
+    const reportChannel = supabase
+      .channel("dashboard-report-kpis")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "intelligence_reports",
+        },
+        () => {
+          fetchDashboardMetrics()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(alertsInterval)
+      supabase.removeChannel(threatChannel)
+      supabase.removeChannel(reportChannel)
+    }
   }, [])
 
   async function fetchDashboardMetrics() {
@@ -250,7 +284,7 @@ function Dashboard() {
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-semibold text-lg">Threat Intelligence Overview</h3>
             <span className="text-xs text-emerald-400 animate-pulse">
-              Live Simulation
+              Realtime Active
             </span>
           </div>
 

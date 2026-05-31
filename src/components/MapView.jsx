@@ -5,6 +5,8 @@ import { supabase } from "../services/supabaseClient"
 
 function MapView() {
   useEffect(() => {
+    const markers = []
+
     const map = new maplibregl.Map({
       container: "map",
       style: "https://demotiles.maplibre.org/style.json",
@@ -12,7 +14,14 @@ function MapView() {
       zoom: 5,
     })
 
+    function clearMarkers() {
+      markers.forEach((marker) => marker.remove())
+      markers.length = 0
+    }
+
     async function loadThreatMarkers() {
+      clearMarkers()
+
       const { data: threats, error } = await supabase
         .from("threats")
         .select("*")
@@ -31,7 +40,7 @@ function MapView() {
             ? "yellow"
             : "green"
 
-        new maplibregl.Marker({ color })
+        const marker = new maplibregl.Marker({ color })
           .setLngLat([threat.longitude, threat.latitude])
           .setPopup(
             new maplibregl.Popup().setHTML(`
@@ -44,6 +53,8 @@ function MapView() {
             `)
           )
           .addTo(map)
+
+        markers.push(marker)
       })
     }
 
@@ -80,7 +91,26 @@ function MapView() {
       loadThreatMarkers()
     })
 
-    return () => map.remove()
+    const channel = supabase
+      .channel("realtime-threat-map")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "threats",
+        },
+        () => {
+          loadThreatMarkers()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearMarkers()
+      supabase.removeChannel(channel)
+      map.remove()
+    }
   }, [])
 
   return (
