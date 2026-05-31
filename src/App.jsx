@@ -20,8 +20,10 @@ import Infrastructure from "./pages/Infrastructure"
 import Sharing from "./pages/Sharing"
 import Audit from "./pages/Audit"
 import Threats from "./pages/Threats"
+import MyThreats from "./pages/MyThreats"
 import Analytics from "./pages/Analytics"
 import Admin from "./pages/Admin"
+import Notifications from "./pages/Notifications"
 import Login from "./pages/Login"
 
 import {
@@ -37,6 +39,8 @@ import {
   ClipboardList,
   BarChart3,
   Users,
+  UserCheck,
+  Bell,
 } from "lucide-react"
 
 function App() {
@@ -79,6 +83,40 @@ function App() {
 }
 
 function SecureLayout({ user, onLogout }) {
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    fetchUnreadNotifications()
+
+    const channel = supabase
+      .channel("sidebar-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+        },
+        () => {
+          fetchUnreadNotifications()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  async function fetchUnreadNotifications() {
+    const { count } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("is_read", false)
+
+    setUnreadCount(count || 0)
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
       <aside className="w-72 bg-slate-900 border-r border-slate-800 p-6 hidden md:block">
@@ -96,8 +134,10 @@ function SecureLayout({ user, onLogout }) {
         <nav className="space-y-3">
           <MenuItem to="/" icon={<Activity size={18} />} text="Threat Dashboard" />
           <MenuItem to="/threats" icon={<AlertTriangle size={18} />} text="Threat Management" />
+          <MenuItem to="/my-threats" icon={<UserCheck size={18} />} text="My Threats" />
           <MenuItem to="/analytics" icon={<BarChart3 size={18} />} text="Analytics Center" />
           <MenuItem to="/admin" icon={<Users size={18} />} text="Admin Management" />
+          <MenuItem to="/notifications" icon={<Bell size={18} />} text={`Notifications ${unreadCount > 0 ? `(${unreadCount})` : ""}`} />
           <MenuItem to="/border" icon={<Radar size={18} />} text="Border Intelligence" />
           <MenuItem to="/maritime" icon={<Ship size={18} />} text="Maritime Awareness" />
           <MenuItem to="/airspace" icon={<Plane size={18} />} text="Airspace Monitoring" />
@@ -144,8 +184,10 @@ function SecureLayout({ user, onLogout }) {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/threats" element={<Threats />} />
+          <Route path="/my-threats" element={<MyThreats />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/border" element={<Border />} />
           <Route path="/maritime" element={<Maritime />} />
           <Route path="/airspace" element={<Airspace />} />
@@ -262,29 +304,10 @@ function Dashboard() {
   return (
     <>
       <section className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-        <StatCard
-          title="Active Threats"
-          value={metrics.activeThreats}
-          status="Open / Investigating"
-        />
-
-        <StatCard
-          title="Critical Threats"
-          value={metrics.criticalThreats}
-          status="Highest Priority"
-        />
-
-        <StatCard
-          title="Resolved Threats"
-          value={metrics.resolvedThreats}
-          status="Closed Cases"
-        />
-
-        <StatCard
-          title="Shared Reports"
-          value={metrics.sharedReports}
-          status="Secure Documents"
-        />
+        <StatCard title="Active Threats" value={metrics.activeThreats} status="Open / Investigating" />
+        <StatCard title="Critical Threats" value={metrics.criticalThreats} status="Highest Priority" />
+        <StatCard title="Resolved Threats" value={metrics.resolvedThreats} status="Closed Cases" />
+        <StatCard title="Shared Reports" value={metrics.sharedReports} status="Secure Documents" />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
