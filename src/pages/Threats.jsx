@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { AlertTriangle, Shield, MapPin, Activity } from "lucide-react"
+import { AlertTriangle, Shield, MapPin, Activity, UserCheck } from "lucide-react"
 import { supabase } from "../services/supabaseClient"
 
 function Threats() {
@@ -10,7 +10,9 @@ function Threats() {
   const [priority, setPriority] = useState("Medium")
   const [status, setStatus] = useState("Open")
   const [description, setDescription] = useState("")
+  const [assignedTo, setAssignedTo] = useState("")
   const [threats, setThreats] = useState([])
+  const [profiles, setProfiles] = useState([])
   const [message, setMessage] = useState("")
   const [currentUser, setCurrentUser] = useState(null)
 
@@ -19,6 +21,7 @@ function Threats() {
 
   useEffect(() => {
     loadCurrentUser()
+    fetchProfiles()
     fetchThreats()
   }, [])
 
@@ -45,15 +48,39 @@ function Threats() {
     })
   }
 
+  async function fetchProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, role")
+      .order("full_name", { ascending: true })
+
+    if (!error) {
+      setProfiles(data)
+    }
+  }
+
   async function fetchThreats() {
     const { data, error } = await supabase
       .from("threats")
-      .select("*")
+      .select(`
+        *,
+        assigned_profile:profiles!threats_assigned_to_fkey(
+          id,
+          full_name,
+          email,
+          role
+        )
+      `)
       .order("created_at", { ascending: false })
 
     if (!error) {
       setThreats(data)
     }
+  }
+
+  function getProfileName(profileId) {
+    const profile = profiles.find((item) => item.id === profileId)
+    return profile ? profile.full_name : "Unassigned"
   }
 
   async function handleCreateThreat() {
@@ -87,6 +114,7 @@ function Threats() {
       priority,
       status,
       description,
+      assigned_to: assignedTo || null,
       created_by: user.id,
     })
 
@@ -95,9 +123,11 @@ function Threats() {
       return
     }
 
+    const assignedName = assignedTo ? getProfileName(assignedTo) : "Unassigned"
+
     await logAudit(
       "CREATE_THREAT",
-      `${currentUser?.name || user.email} created threat "${title}" at "${location}"`
+      `${currentUser?.name || user.email} created threat "${title}" at "${location}" and assigned it to "${assignedName}"`
     )
 
     setMessage("Threat created successfully.")
@@ -108,6 +138,7 @@ function Threats() {
     setPriority("Medium")
     setStatus("Open")
     setDescription("")
+    setAssignedTo("")
     fetchThreats()
   }
 
@@ -131,9 +162,36 @@ function Threats() {
     fetchThreats()
   }
 
+  async function handleAssignmentChange(threat, newAssignedTo) {
+    const { error } = await supabase
+      .from("threats")
+      .update({
+        assigned_to: newAssignedTo || null,
+      })
+      .eq("id", threat.id)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    const assignedName = newAssignedTo
+      ? getProfileName(newAssignedTo)
+      : "Unassigned"
+
+    await logAudit(
+      "ASSIGN_THREAT",
+      `${currentUser?.name || "User"} assigned threat "${threat.title}" to "${assignedName}"`
+    )
+
+    setMessage("Threat assignment updated.")
+    fetchThreats()
+  }
+
   const criticalCount = threats.filter((item) => item.priority === "Critical").length
   const openCount = threats.filter((item) => item.status === "Open").length
   const resolvedCount = threats.filter((item) => item.status === "Resolved").length
+  const assignedCount = threats.filter((item) => item.assigned_to).length
 
   return (
     <div>
@@ -142,14 +200,14 @@ function Threats() {
       </h1>
 
       <p className="text-slate-400 mb-8">
-        Create, monitor, classify and update operational threat records with geospatial coordinates.
+        Create, monitor, assign and update operational threat records with geospatial coordinates.
       </p>
 
       <div className="grid md:grid-cols-4 gap-5 mb-8">
         <Card icon={<AlertTriangle />} title="Total Threats" value={threats.length} color="text-red-400" />
         <Card icon={<Shield />} title="Open Cases" value={openCount} color="text-yellow-400" />
         <Card icon={<Activity />} title="Critical Priority" value={criticalCount} color="text-orange-400" />
-        <Card icon={<MapPin />} title="Resolved" value={resolvedCount} color="text-emerald-400" />
+        <Card icon={<UserCheck />} title="Assigned Cases" value={assignedCount} color="text-emerald-400" />
       </div>
 
       {message && (
@@ -213,6 +271,20 @@ function Threats() {
               <option>Investigating</option>
               <option>Resolved</option>
             </select>
+
+            <select
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="p-3 rounded-xl bg-slate-800 text-white outline-none md:col-span-2"
+            >
+              <option value="">Assign to agent</option>
+
+              {profiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.full_name} — {profile.role}
+                </option>
+              ))}
+            </select>
           </div>
 
           <textarea
@@ -253,6 +325,7 @@ function Threats() {
               <th className="text-left p-3">Coordinates</th>
               <th className="text-left p-3">Priority</th>
               <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Assigned To</th>
               <th className="text-left p-3">Update</th>
             </tr>
           </thead>
@@ -260,7 +333,7 @@ function Threats() {
           <tbody>
             {threats.length === 0 ? (
               <tr>
-                <td className="p-3 text-slate-500" colSpan="6">
+                <td className="p-3 text-slate-500" colSpan="7">
                   No threat records yet.
                 </td>
               </tr>
@@ -286,6 +359,24 @@ function Threats() {
 
                   <td className="p-3 text-slate-300">
                     {threat.status}
+                  </td>
+
+                  <td className="p-3">
+                    <select
+                      value={threat.assigned_to || ""}
+                      onChange={(e) =>
+                        handleAssignmentChange(threat, e.target.value)
+                      }
+                      className="bg-slate-800 text-white p-2 rounded-lg outline-none"
+                    >
+                      <option value="">Unassigned</option>
+
+                      {profiles.map((profile) => (
+                        <option key={profile.id} value={profile.id}>
+                          {profile.full_name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
 
                   <td className="p-3">
