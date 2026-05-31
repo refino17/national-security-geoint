@@ -1,24 +1,39 @@
 import { useState, useEffect } from "react"
-import { Lock, Upload, Users, FileText, Download, Trash2 } from "lucide-react"
+import {
+  Lock,
+  Upload,
+  Users,
+  FileText,
+  Download,
+  Trash2,
+  ShieldCheck,
+} from "lucide-react"
 import { supabase } from "../services/supabaseClient"
 
 function Sharing() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [title, setTitle] = useState("")
+  const [summary, setSummary] = useState("")
   const [classification, setClassification] = useState("Confidential")
+  const [reportType, setReportType] = useState("Operational")
+  const [status, setStatus] = useState("Draft")
+  const [linkedThreatId, setLinkedThreatId] = useState("")
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState("")
   const [reports, setReports] = useState([])
+  const [threats, setThreats] = useState([])
   const [currentUser, setCurrentUser] = useState(null)
 
   const canUpload =
     currentUser?.role === "Admin" || currentUser?.role === "Analyst"
 
   const canDelete = currentUser?.role === "Admin"
+  const canApprove = currentUser?.role === "Admin"
 
   useEffect(() => {
     loadCurrentUser()
     fetchReports()
+    fetchThreats()
   }, [])
 
   async function logAudit(action, details) {
@@ -36,7 +51,17 @@ function Sharing() {
     })
   }
 
-  async function loadCurrentUser() {
+  async function createNotification(title, message, notificationType) {
+    await supabase.from("notifications").insert({
+      title,
+      message,
+      notification_type: notificationType,
+      recipient_id: null,
+      is_read: false,
+    })
+  }
+
+  function loadCurrentUser() {
     const savedUser = localStorage.getItem("geoint_user")
 
     if (savedUser) {
@@ -47,11 +72,31 @@ function Sharing() {
   async function fetchReports() {
     const { data, error } = await supabase
       .from("intelligence_reports")
-      .select("*")
+      .select(`
+        *,
+        linked_threat:threats(
+          id,
+          title,
+          location,
+          priority,
+          status
+        )
+      `)
       .order("created_at", { ascending: false })
 
     if (!error) {
       setReports(data)
+    }
+  }
+
+  async function fetchThreats() {
+    const { data, error } = await supabase
+      .from("threats")
+      .select("id, title, location, priority, status")
+      .order("created_at", { ascending: false })
+
+    if (!error) {
+      setThreats(data)
     }
   }
 
@@ -70,6 +115,11 @@ function Sharing() {
 
     if (!title) {
       setMessage("Please enter a report title.")
+      return
+    }
+
+    if (!summary) {
+      setMessage("Please enter a report summary.")
       return
     }
 
@@ -102,7 +152,11 @@ function Sharing() {
       .from("intelligence_reports")
       .insert({
         title,
+        summary,
         classification,
+        report_type: reportType,
+        status,
+        linked_threat_id: linkedThreatId || null,
         file_path: filePath,
         uploaded_by: user.id,
       })
@@ -114,14 +168,24 @@ function Sharing() {
     }
 
     await logAudit(
-      "UPLOAD_REPORT",
-      `${currentUser?.name || user.email} uploaded report "${title}" with classification "${classification}"`
+      "CREATE_INTELLIGENCE_REPORT",
+      `${currentUser?.name || user.email} created intelligence report "${title}" with classification "${classification}"`
     )
 
-    setMessage("Report uploaded successfully.")
+    await createNotification(
+      "New Intelligence Report",
+      `${currentUser?.name || user.email} created report "${title}". Classification: ${classification}.`,
+      "report"
+    )
+
+    setMessage("Intelligence report created successfully.")
     setSelectedFile(null)
     setTitle("")
+    setSummary("")
     setClassification("Confidential")
+    setReportType("Operational")
+    setStatus("Draft")
+    setLinkedThreatId("")
     setUploading(false)
     fetchReports()
   }
@@ -180,19 +244,59 @@ function Sharing() {
       `${currentUser?.name || "Admin"} deleted report "${report.title}"`
     )
 
+    await createNotification(
+      "Intelligence Report Deleted",
+      `${currentUser?.name || "Admin"} deleted report "${report.title}".`,
+      "report"
+    )
+
     setMessage("Report deleted successfully.")
     fetchReports()
   }
 
+  async function handleStatusChange(report, newStatus) {
+    if (!canApprove) {
+      setMessage("Only Admin users can update report approval status.")
+      return
+    }
+
+    const { error } = await supabase
+      .from("intelligence_reports")
+      .update({ status: newStatus })
+      .eq("id", report.id)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    await logAudit(
+      "UPDATE_REPORT_STATUS",
+      `${currentUser?.name || "Admin"} changed report "${report.title}" status to "${newStatus}"`
+    )
+
+    await createNotification(
+      "Report Status Updated",
+      `Report "${report.title}" status changed to ${newStatus}.`,
+      "report"
+    )
+
+    setMessage("Report status updated.")
+    fetchReports()
+  }
+
+  const approvedCount = reports.filter((report) => report.status === "Approved").length
+  const draftCount = reports.filter((report) => report.status === "Draft").length
+  const topSecretCount = reports.filter((report) => report.classification === "Top Secret").length
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-2">
-        Secure Intelligence Sharing
+        Intelligence Reports Center
       </h1>
 
       <p className="text-slate-400 mb-4">
-        Share classified reports, manage access levels,
-        and control intelligence distribution between authorized units.
+        Create, classify, approve and securely distribute intelligence reports between authorized units.
       </p>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-8">
@@ -202,15 +306,15 @@ function Sharing() {
         </p>
 
         <p className="text-xs text-slate-500 mt-2">
-          Admin can view, upload and delete. Analyst can view and upload. Viewer can only view.
+          Admin can create, approve, view and delete. Analyst can create and view. Viewer can only view.
         </p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-5 mb-8">
-        <Card icon={<FileText />} title="Shared Reports" value={reports.length} color="text-blue-400" />
-        <Card icon={<Users />} title="Authorized Users" value="124" color="text-emerald-400" />
-        <Card icon={<Lock />} title="Encrypted Files" value={reports.length} color="text-purple-400" />
-        <Card icon={<Upload />} title="Uploads Today" value={reports.length} color="text-yellow-400" />
+        <Card icon={<FileText />} title="Total Reports" value={reports.length} color="text-blue-400" />
+        <Card icon={<ShieldCheck />} title="Approved" value={approvedCount} color="text-emerald-400" />
+        <Card icon={<Lock />} title="Top Secret" value={topSecretCount} color="text-purple-400" />
+        <Card icon={<Upload />} title="Draft Reports" value={draftCount} color="text-yellow-400" />
       </div>
 
       {message && (
@@ -221,7 +325,7 @@ function Sharing() {
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
         <h2 className="font-bold text-lg mb-5">
-          Intelligence Sharing Log
+          Intelligence Report Registry
         </h2>
 
         <table className="w-full">
@@ -229,7 +333,9 @@ function Sharing() {
             <tr>
               <th className="text-left p-3">Report</th>
               <th className="text-left p-3">Classification</th>
-              <th className="text-left p-3">Status</th>
+              <th className="text-left p-3">Type</th>
+              <th className="text-left p-3">Linked Threat</th>
+              <th className="text-left p-3">Approval</th>
               <th className="text-left p-3">Action</th>
             </tr>
           </thead>
@@ -237,8 +343,8 @@ function Sharing() {
           <tbody>
             {reports.length === 0 ? (
               <tr>
-                <td className="p-3 text-slate-500" colSpan="4">
-                  No uploaded intelligence reports yet.
+                <td className="p-3 text-slate-500" colSpan="6">
+                  No intelligence reports created yet.
                 </td>
               </tr>
             ) : (
@@ -247,8 +353,12 @@ function Sharing() {
                   key={report.id}
                   report={report}
                   canDelete={canDelete}
+                  canApprove={canApprove}
                   onDownload={() => handleDownload(report)}
                   onDelete={() => handleDelete(report)}
+                  onStatusChange={(newStatus) =>
+                    handleStatusChange(report, newStatus)
+                  }
                 />
               ))
             )}
@@ -259,14 +369,14 @@ function Sharing() {
       {canUpload ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-8">
           <h2 className="font-bold text-lg mb-4">
-            Classified Report Upload
+            Create Intelligence Report
           </h2>
 
           <div className="border-2 border-dashed border-slate-700 rounded-2xl p-10">
             <Upload className="mx-auto text-emerald-400 mb-4" size={42} />
 
             <p className="text-slate-300 mb-6 text-center">
-              Upload intelligence reports securely to Supabase Storage
+              Upload intelligence reports securely to Supabase Storage and link them to operational threats.
             </p>
 
             <input
@@ -276,15 +386,60 @@ function Sharing() {
               className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
             />
 
-            <select
-              value={classification}
-              onChange={(e) => setClassification(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
-            >
-              <option>Confidential</option>
-              <option>Secret</option>
-              <option>Top Secret</option>
-            </select>
+            <textarea
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              placeholder="Report summary / analyst assessment"
+              className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none h-28"
+            />
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <select
+                value={classification}
+                onChange={(e) => setClassification(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
+              >
+                <option>Confidential</option>
+                <option>Secret</option>
+                <option>Top Secret</option>
+              </select>
+
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
+              >
+                <option>Operational</option>
+                <option>Strategic</option>
+                <option>Tactical</option>
+                <option>Satellite</option>
+                <option>Weather</option>
+                <option>Incident</option>
+              </select>
+
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
+              >
+                <option>Draft</option>
+                <option>Reviewed</option>
+                <option>Approved</option>
+              </select>
+
+              <select
+                value={linkedThreatId}
+                onChange={(e) => setLinkedThreatId(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-800 text-white mb-4 outline-none"
+              >
+                <option value="">Link to threat case</option>
+                {threats.map((threat) => (
+                  <option key={threat.id} value={threat.id}>
+                    {threat.title} — {threat.location}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <input
               type="file"
@@ -297,7 +452,7 @@ function Sharing() {
               disabled={uploading}
               className="w-full bg-emerald-500 text-slate-950 font-bold p-3 rounded-xl hover:bg-emerald-400 transition disabled:opacity-60"
             >
-              {uploading ? "Uploading..." : "Upload Classified Report"}
+              {uploading ? "Creating Report..." : "Create Intelligence Report"}
             </button>
 
             <p className="text-slate-500 mt-4 text-xs text-center">
@@ -308,10 +463,10 @@ function Sharing() {
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-8">
           <h2 className="font-bold text-lg mb-2">
-            Upload Restricted
+            Report Creation Restricted
           </h2>
           <p className="text-slate-400">
-            Viewer access is read-only. Contact an Admin for upload permissions.
+            Viewer access is read-only. Contact an Admin for report creation permissions.
           </p>
         </div>
       )}
@@ -337,12 +492,50 @@ function Card({ icon, title, value, color }) {
   )
 }
 
-function Row({ report, canDelete, onDownload, onDelete }) {
+function Row({
+  report,
+  canDelete,
+  canApprove,
+  onDownload,
+  onDelete,
+  onStatusChange,
+}) {
   return (
     <tr className="border-b border-slate-800">
-      <td className="p-3">{report.title}</td>
-      <td className="p-3">{report.classification}</td>
-      <td className="p-3 text-emerald-400">Encrypted</td>
+      <td className="p-3">
+        <p className="font-semibold">{report.title}</p>
+        <p className="text-xs text-slate-500 mt-1">
+          {report.summary || "No summary provided."}
+        </p>
+      </td>
+
+      <td className={`p-3 font-semibold ${classificationColor(report.classification)}`}>
+        {report.classification}
+      </td>
+
+      <td className="p-3 text-slate-300">
+        {report.report_type || "Operational"}
+      </td>
+
+      <td className="p-3 text-slate-300">
+        {report.linked_threat
+          ? `${report.linked_threat.title} (${report.linked_threat.location})`
+          : "Not linked"}
+      </td>
+
+      <td className="p-3">
+        <select
+          value={report.status || "Draft"}
+          onChange={(e) => onStatusChange(e.target.value)}
+          disabled={!canApprove}
+          className="bg-slate-800 text-white p-2 rounded-lg outline-none disabled:opacity-50"
+        >
+          <option>Draft</option>
+          <option>Reviewed</option>
+          <option>Approved</option>
+        </select>
+      </td>
+
       <td className="p-3">
         <div className="flex gap-2">
           <button
@@ -366,6 +559,12 @@ function Row({ report, canDelete, onDownload, onDelete }) {
       </td>
     </tr>
   )
+}
+
+function classificationColor(classification) {
+  if (classification === "Top Secret") return "text-red-400"
+  if (classification === "Secret") return "text-orange-400"
+  return "text-yellow-400"
 }
 
 export default Sharing

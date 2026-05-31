@@ -8,6 +8,7 @@ import {
   Upload,
   Eye,
   X,
+  Clock,
 } from "lucide-react"
 import { supabase } from "../services/supabaseClient"
 
@@ -29,6 +30,7 @@ function Threats() {
   const [selectedThreat, setSelectedThreat] = useState(null)
   const [notes, setNotes] = useState([])
   const [evidenceFiles, setEvidenceFiles] = useState([])
+  const [timeline, setTimeline] = useState([])
   const [newNote, setNewNote] = useState("")
   const [evidenceTitle, setEvidenceTitle] = useState("")
   const [selectedEvidence, setSelectedEvidence] = useState(null)
@@ -63,13 +65,33 @@ function Threats() {
     })
   }
 
-  async function createNotification(title, message, notificationType, recipientId = null) {
+  async function createNotification(
+    title,
+    message,
+    notificationType,
+    recipientId = null
+  ) {
     await supabase.from("notifications").insert({
       title,
       message,
       notification_type: notificationType,
       recipient_id: recipientId,
       is_read: false,
+    })
+  }
+
+  async function createTimelineEvent(threatId, eventType, eventMessage) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    await supabase.from("threat_timeline").insert({
+      threat_id: threatId,
+      event_type: eventType,
+      event_message: eventMessage,
+      created_by: user.id,
     })
   }
 
@@ -104,8 +126,15 @@ function Threats() {
       .eq("threat_id", threatId)
       .order("created_at", { ascending: false })
 
+    const { data: timelineData } = await supabase
+      .from("threat_timeline")
+      .select("*")
+      .eq("threat_id", threatId)
+      .order("created_at", { ascending: false })
+
     setNotes(notesData || [])
     setEvidenceFiles(evidenceData || [])
+    setTimeline(timelineData || [])
   }
 
   function getProfileName(profileId) {
@@ -136,17 +165,21 @@ function Threats() {
       return
     }
 
-    const { error } = await supabase.from("threats").insert({
-      title,
-      location,
-      latitude: Number(latitude),
-      longitude: Number(longitude),
-      priority,
-      status,
-      description,
-      assigned_to: assignedTo || null,
-      created_by: user.id,
-    })
+    const { data: createdThreat, error } = await supabase
+      .from("threats")
+      .insert({
+        title,
+        location,
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+        priority,
+        status,
+        description,
+        assigned_to: assignedTo || null,
+        created_by: user.id,
+      })
+      .select()
+      .single()
 
     if (error) {
       setMessage(error.message)
@@ -175,6 +208,12 @@ function Threats() {
         assignedTo
       )
     }
+
+    await createTimelineEvent(
+      createdThreat.id,
+      "THREAT_CREATED",
+      `Threat "${title}" was created at ${location}. Priority: ${priority}. Assigned to ${assignedName}.`
+    )
 
     setMessage("Threat created successfully.")
     setTitle("")
@@ -211,8 +250,18 @@ function Threats() {
       threat.assigned_to || null
     )
 
+    await createTimelineEvent(
+      threat.id,
+      "STATUS_UPDATED",
+      `Status changed to ${newStatus}.`
+    )
+
     setMessage("Threat status updated.")
     fetchThreats()
+
+    if (selectedThreat?.id === threat.id) {
+      fetchCaseData(threat.id)
+    }
   }
 
   async function handleAssignmentChange(threat, newAssignedTo) {
@@ -242,8 +291,18 @@ function Threats() {
       newAssignedTo || null
     )
 
+    await createTimelineEvent(
+      threat.id,
+      "ASSIGNMENT_UPDATED",
+      `Threat assigned to ${assignedName}.`
+    )
+
     setMessage("Threat assignment updated.")
     fetchThreats()
+
+    if (selectedThreat?.id === threat.id) {
+      fetchCaseData(threat.id)
+    }
   }
 
   async function openCase(threat) {
@@ -298,6 +357,12 @@ function Threats() {
       `${currentUser?.name || user.email} added a note to "${selectedThreat.title}".`,
       "note",
       selectedThreat.assigned_to || null
+    )
+
+    await createTimelineEvent(
+      selectedThreat.id,
+      "NOTE_ADDED",
+      `Investigation note added by ${currentUser?.name || user.email}.`
     )
 
     setNewNote("")
@@ -361,6 +426,12 @@ function Threats() {
       `${currentUser?.name || user.email} uploaded evidence "${evidenceTitle}" for "${selectedThreat.title}".`,
       "evidence",
       selectedThreat.assigned_to || null
+    )
+
+    await createTimelineEvent(
+      selectedThreat.id,
+      "EVIDENCE_UPLOADED",
+      `Evidence "${evidenceTitle}" uploaded by ${currentUser?.name || user.email}.`
     )
 
     setEvidenceTitle("")
@@ -603,6 +674,40 @@ function Threats() {
                     ))
                   )}
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mt-6">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <Clock size={18} />
+                Intelligence Timeline
+              </h3>
+
+              <div className="space-y-4">
+                {timeline.length === 0 ? (
+                  <p className="text-slate-500 text-sm">
+                    No timeline events yet.
+                  </p>
+                ) : (
+                  timeline.map((event) => (
+                    <div
+                      key={event.id}
+                      className="border-l-2 border-emerald-500 pl-4 py-2"
+                    >
+                      <p className="text-emerald-400 font-semibold text-sm">
+                        {event.event_type}
+                      </p>
+
+                      <p className="text-slate-300 text-sm mt-1">
+                        {event.event_message}
+                      </p>
+
+                      <p className="text-slate-500 text-xs mt-2">
+                        {new Date(event.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
