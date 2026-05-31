@@ -20,6 +20,7 @@ import Infrastructure from "./pages/Infrastructure"
 import Sharing from "./pages/Sharing"
 import Audit from "./pages/Audit"
 import Threats from "./pages/Threats"
+import Analytics from "./pages/Analytics"
 import Login from "./pages/Login"
 
 import {
@@ -33,6 +34,7 @@ import {
   AlertTriangle,
   LogOut,
   ClipboardList,
+  BarChart3,
 } from "lucide-react"
 
 function App() {
@@ -92,6 +94,7 @@ function SecureLayout({ user, onLogout }) {
         <nav className="space-y-3">
           <MenuItem to="/" icon={<Activity size={18} />} text="Threat Dashboard" />
           <MenuItem to="/threats" icon={<AlertTriangle size={18} />} text="Threat Management" />
+          <MenuItem to="/analytics" icon={<BarChart3 size={18} />} text="Analytics Center" />
           <MenuItem to="/border" icon={<Radar size={18} />} text="Border Intelligence" />
           <MenuItem to="/maritime" icon={<Ship size={18} />} text="Maritime Awareness" />
           <MenuItem to="/airspace" icon={<Plane size={18} />} text="Airspace Monitoring" />
@@ -138,6 +141,7 @@ function SecureLayout({ user, onLogout }) {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/threats" element={<Threats />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/border" element={<Border />} />
           <Route path="/maritime" element={<Maritime />} />
           <Route path="/airspace" element={<Airspace />} />
