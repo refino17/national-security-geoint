@@ -43,6 +43,9 @@ import {
   Bell,
   Menu,
   X,
+  Satellite,
+  Radio,
+  Sparkles,
 } from "lucide-react"
 
 function App() {
@@ -125,8 +128,8 @@ function SecureLayout({ user, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 p-6 hidden md:block fixed left-0 top-0 h-screen overflow-y-auto">
+    <div className="min-h-screen bg-slate-950 bg-ops-gradient text-white flex">
+      <aside className="w-72 bg-slate-950/90 backdrop-blur-xl border-r border-white/10 p-5 hidden md:block fixed left-0 top-0 h-screen overflow-y-auto">
         <SidebarContent
           unreadCount={unreadCount}
           onLogout={onLogout}
@@ -142,16 +145,16 @@ function SecureLayout({ user, onLogout }) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-screen w-72 bg-slate-900 border-r border-slate-800 p-6 z-50 overflow-y-auto transform transition-transform duration-300 md:hidden ${
+        className={`fixed top-0 left-0 h-screen w-72 bg-slate-950 border-r border-white/10 p-5 z-50 overflow-y-auto transform transition-transform duration-300 md:hidden ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex justify-end mb-4">
           <button
             onClick={closeMobileMenu}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-400 hover:text-white bg-white/5 border border-white/10 p-2 rounded-xl"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
@@ -163,36 +166,50 @@ function SecureLayout({ user, onLogout }) {
       </aside>
 
       <main className="flex-1 md:ml-72 p-4 md:p-6 min-w-0">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div className="flex items-start gap-4">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden bg-slate-900 border border-slate-800 p-3 rounded-xl text-slate-300"
-            >
-              <Menu size={22} />
-            </button>
+        <header className="sticky top-0 z-30 mb-8 bg-slate-950/75 backdrop-blur-xl border border-white/10 rounded-3xl p-4 shadow-card">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden bg-white/5 border border-white/10 p-3 rounded-2xl text-slate-300 hover:text-white"
+              >
+                <Menu size={22} />
+              </button>
 
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold">
-                National Security Operations Center
-              </h2>
+              <div>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold">
+                    <Radio size={13} />
+                    Live Operations
+                  </span>
 
-              <p className="text-slate-400 text-sm">
-                Real-time geospatial intelligence and threat monitoring
-              </p>
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-semibold">
+                    <Satellite size={13} />
+                    GEOINT Enabled
+                  </span>
+                </div>
+
+                <h2 className="text-xl md:text-3xl font-black tracking-tight">
+                  National Security Operations Center
+                </h2>
+
+                <p className="text-slate-400 text-sm mt-1">
+                  Real-time geospatial intelligence, threat monitoring and operational response.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-4 bg-slate-900 md:bg-transparent border border-slate-800 md:border-0 rounded-2xl p-3 md:p-0">
-            <div className="text-left md:text-right">
-              <p className="font-semibold">{user.name}</p>
-              <p className="text-xs text-slate-400">
-                {user.role} • Clearance {user.clearance}
-              </p>
-            </div>
+            <div className="flex items-center justify-between lg:justify-end gap-4 bg-white/5 border border-white/10 rounded-2xl p-3">
+              <div className="text-left lg:text-right">
+                <p className="font-bold">{user.name}</p>
+                <p className="text-xs text-slate-400">
+                  {user.role} • Clearance {user.clearance}
+                </p>
+              </div>
 
-            <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-slate-950">
-              {user.initial}
+              <div className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center font-black text-slate-950 shadow-glow">
+                {user.initial}
+              </div>
             </div>
           </div>
         </header>
@@ -221,20 +238,30 @@ function SecureLayout({ user, onLogout }) {
 function SidebarContent({ unreadCount, onLogout, onNavigate }) {
   return (
     <>
-      <div className="flex items-center gap-3 mb-10">
-        <div className="bg-emerald-500 p-2 rounded-xl">
-          <Shield className="text-slate-950" size={26} />
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="bg-gradient-to-br from-emerald-400 to-cyan-400 p-3 rounded-2xl shadow-glow">
+            <Shield className="text-slate-950" size={26} />
+          </div>
+
+          <div>
+            <h1 className="font-black text-xl tracking-tight">GEOINT Suite</h1>
+            <p className="text-xs text-slate-400">Defense Intelligence System</p>
+          </div>
         </div>
 
-        <div>
-          <h1 className="font-bold text-lg">GEOINT Suite</h1>
-          <p className="text-xs text-slate-400">
-            Defense Intelligence System
-          </p>
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+          <p className="text-xs text-slate-500 mb-2">SYSTEM STATUS</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></span>
+            <p className="text-sm font-semibold text-emerald-300">
+              Operational
+            </p>
+          </div>
         </div>
       </div>
 
-      <nav className="space-y-3">
+      <nav className="space-y-2">
         <MenuItem to="/" icon={<Activity size={18} />} text="Threat Dashboard" onNavigate={onNavigate} />
         <MenuItem to="/threats" icon={<AlertTriangle size={18} />} text="Threat Management" onNavigate={onNavigate} />
         <MenuItem to="/my-threats" icon={<UserCheck size={18} />} text="My Threats" onNavigate={onNavigate} />
@@ -251,7 +278,7 @@ function SidebarContent({ unreadCount, onLogout, onNavigate }) {
 
       <button
         onClick={onLogout}
-        className="mt-10 w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 py-3 rounded-xl hover:bg-red-500/20 transition"
+        className="mt-8 w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-300 border border-red-500/20 py-3 rounded-2xl hover:bg-red-500/20 transition"
       >
         <LogOut size={18} />
         Logout
@@ -268,33 +295,11 @@ function Dashboard() {
     sharedReports: 0,
   })
 
-  const [alerts, setAlerts] = useState([
-    { level: "Critical", text: "Unauthorized movement near border sector B-12" },
-    { level: "High", text: "Unknown vessel detected near coastal route" },
-    { level: "Medium", text: "Drone activity reported near infrastructure zone" },
-    { level: "Low", text: "Routine satellite image update completed" },
-  ])
+  const [alerts, setAlerts] = useState([])
 
   useEffect(() => {
     fetchDashboardMetrics()
-
-    const alertsInterval = setInterval(() => {
-      const randomAlerts = [
-        "Satellite detected suspicious movement",
-        "Airspace anomaly detected",
-        "Maritime signal interruption",
-        "Border checkpoint activity spike",
-        "Infrastructure security warning",
-      ]
-
-      const randomText =
-        randomAlerts[Math.floor(Math.random() * randomAlerts.length)]
-
-      setAlerts((prev) => [
-        { level: "Live", text: randomText },
-        ...prev.slice(0, 4),
-      ])
-    }, 5000)
+    fetchRealtimeAlerts()
 
     const threatChannel = supabase
       .channel("dashboard-threat-kpis")
@@ -326,10 +331,35 @@ function Dashboard() {
       )
       .subscribe()
 
+    const alertChannel = supabase
+      .channel("dashboard-realtime-alerts")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+        },
+        (payload) => {
+          const notification = payload.new
+
+          setAlerts((prev) => [
+            {
+              level: formatAlertLevel(notification.notification_type),
+              text: notification.message || notification.title,
+              title: notification.title,
+              time: notification.created_at,
+            },
+            ...prev.slice(0, 4),
+          ])
+        }
+      )
+      .subscribe()
+
     return () => {
-      clearInterval(alertsInterval)
       supabase.removeChannel(threatChannel)
       supabase.removeChannel(reportChannel)
+      supabase.removeChannel(alertChannel)
     }
   }, [])
 
@@ -361,23 +391,98 @@ function Dashboard() {
     })
   }
 
+  async function fetchRealtimeAlerts() {
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5)
+
+    if (error) return
+
+    setAlerts(
+      (data || []).map((notification) => ({
+        level: formatAlertLevel(notification.notification_type),
+        text: notification.message || notification.title,
+        title: notification.title,
+        time: notification.created_at,
+      }))
+    )
+  }
+
   return (
     <>
+      <section className="mb-8 rounded-3xl bg-slate-900/70 border border-white/10 p-5 md:p-7 shadow-card overflow-hidden relative">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <p className="text-emerald-300 text-sm font-bold mb-2 flex items-center gap-2">
+              <Sparkles size={16} />
+              Command Intelligence Dashboard
+            </p>
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+              GEOINT Operations Overview
+            </h1>
+
+            <p className="text-slate-400 mt-3 max-w-3xl">
+              Monitor active threats, satellite map intelligence, operational alerts,
+              reports and domain-level security activities from one command center.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 min-w-[260px]">
+            <MiniStatus label="Realtime" value="Active" />
+            <MiniStatus label="Map Layer" value="Satellite" />
+            <MiniStatus label="Backend" value="Supabase" />
+            <MiniStatus label="Security" value="RBAC" />
+          </div>
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        <StatCard title="Active Threats" value={metrics.activeThreats} status="Open / Investigating" />
-        <StatCard title="Critical Threats" value={metrics.criticalThreats} status="Highest Priority" />
-        <StatCard title="Resolved Threats" value={metrics.resolvedThreats} status="Closed Cases" />
-        <StatCard title="Shared Reports" value={metrics.sharedReports} status="Secure Documents" />
+        <StatCard
+          title="Active Threats"
+          value={metrics.activeThreats}
+          status="Open / Investigating"
+          tone="emerald"
+        />
+
+        <StatCard
+          title="Critical Threats"
+          value={metrics.criticalThreats}
+          status="Highest Priority"
+          tone="red"
+        />
+
+        <StatCard
+          title="Resolved Threats"
+          value={metrics.resolvedThreats}
+          status="Closed Cases"
+          tone="blue"
+        />
+
+        <StatCard
+          title="Shared Reports"
+          value={metrics.sharedReports}
+          status="Secure Documents"
+          tone="purple"
+        />
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 min-w-0">
+        <div className="xl:col-span-2 bg-slate-900/80 border border-white/10 rounded-3xl p-4 md:p-6 min-w-0 shadow-card">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
-            <h3 className="font-semibold text-lg">
-              Threat Intelligence Overview
-            </h3>
+            <div>
+              <h3 className="font-black text-xl">Threat Intelligence Map</h3>
+              <p className="text-slate-500 text-sm">
+                Satellite, heatmap, terrain and realtime threat markers.
+              </p>
+            </div>
 
-            <span className="text-xs text-emerald-400 animate-pulse">
+            <span className="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               Realtime Active
             </span>
           </div>
@@ -385,20 +490,43 @@ function Dashboard() {
           <MapView />
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6">
-          <h3 className="font-semibold text-lg mb-5">Real-Time Alerts</h3>
+        <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-4 md:p-6 shadow-card">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-black text-xl">Real-Time Alerts</h3>
+              <p className="text-slate-500 text-sm">
+                Live notifications from platform activity.
+              </p>
+            </div>
 
-          {alerts.map((alert, index) => (
-            <AlertItem key={index} level={alert.level} text={alert.text} />
-          ))}
+            <Bell className="text-emerald-300" size={22} />
+          </div>
+
+          {alerts.length === 0 ? (
+            <p className="text-slate-500 text-sm">
+              No realtime alerts yet. Create a threat, report, user, or NASA event alert to see activity here.
+            </p>
+          ) : (
+            alerts.map((alert, index) => (
+              <AlertItem
+                key={index}
+                level={alert.level}
+                title={alert.title}
+                text={alert.text}
+                time={alert.time}
+              />
+            ))
+          )}
         </div>
       </section>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto mt-6 bg-slate-900/70 border border-white/10 rounded-3xl p-4 shadow-card">
         <ThreatChart />
       </div>
 
-      <SystemStatus />
+      <div className="mt-6">
+        <SystemStatus />
+      </div>
     </>
   )
 }
@@ -409,10 +537,10 @@ function MenuItem({ to, icon, text, onNavigate }) {
       to={to}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm cursor-pointer ${
+        `group flex items-center gap-3 px-4 py-3 rounded-2xl text-sm cursor-pointer transition ${
           isActive
-            ? "bg-emerald-500 text-slate-950 font-semibold"
-            : "text-slate-300 hover:bg-slate-800"
+            ? "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-glow"
+            : "text-slate-300 hover:bg-white/5 hover:text-white"
         }`
       }
     >
@@ -422,26 +550,74 @@ function MenuItem({ to, icon, text, onNavigate }) {
   )
 }
 
-function StatCard({ title, value, status }) {
+function MiniStatus({ label, value }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <p className="text-slate-400 text-sm">{title}</p>
-      <h3 className="text-3xl font-bold mt-2">{value}</h3>
-      <p className="text-emerald-400 text-xs mt-3">{status}</p>
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+      <p className="text-slate-500 text-xs">{label}</p>
+      <p className="font-black text-sm text-slate-100 mt-1">{value}</p>
     </div>
   )
 }
 
-function AlertItem({ level, text }) {
+function StatCard({ title, value, status, tone }) {
+  const tones = {
+    emerald: "from-emerald-500/20 to-emerald-500/5 text-emerald-300",
+    red: "from-red-500/20 to-red-500/5 text-red-300",
+    blue: "from-blue-500/20 to-blue-500/5 text-blue-300",
+    purple: "from-purple-500/20 to-purple-500/5 text-purple-300",
+  }
+
   return (
-    <div className="border border-slate-800 bg-slate-950 rounded-xl p-4 mb-3">
-      <div className="flex items-center gap-2 mb-2">
-        <AlertTriangle size={16} className="text-amber-400" />
-        <span className="text-xs text-amber-400 font-semibold">{level}</span>
+    <div className="relative overflow-hidden bg-slate-900/80 border border-white/10 rounded-3xl p-5 shadow-card">
+      <div className={`absolute inset-0 bg-gradient-to-br ${tones[tone] || tones.emerald} opacity-70`}></div>
+
+      <div className="relative">
+        <p className="text-slate-400 text-sm">{title}</p>
+        <h3 className="text-4xl font-black mt-3">{value}</h3>
+        <p className={`${(tones[tone] || tones.emerald).split(" ").pop()} text-xs mt-4 font-semibold`}>
+          {status}
+        </p>
       </div>
-      <p className="text-sm text-slate-300">{text}</p>
     </div>
   )
+}
+
+function AlertItem({ level, title, text, time }) {
+  return (
+    <div className="border border-white/10 bg-slate-950/80 rounded-2xl p-4 mb-3 hover:border-emerald-500/30 transition">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle size={16} className="text-amber-300" />
+        <span className="text-xs text-amber-300 font-black">{level}</span>
+      </div>
+
+      {title && (
+        <p className="text-sm font-bold text-slate-100 mb-1">
+          {title}
+        </p>
+      )}
+
+      <p className="text-sm text-slate-300">{text}</p>
+
+      {time && (
+        <p className="text-xs text-slate-500 mt-2">
+          {new Date(time).toLocaleString()}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function formatAlertLevel(type) {
+  if (type === "threat") return "Threat"
+  if (type === "assignment") return "Assignment"
+  if (type === "status") return "Status"
+  if (type === "evidence") return "Evidence"
+  if (type === "note") return "Investigation"
+  if (type === "report") return "Report"
+  if (type === "user") return "User"
+  if (type === "nasa") return "NASA"
+  if (type === "weather") return "Weather"
+  return "Live"
 }
 
 export default App

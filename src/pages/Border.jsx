@@ -10,6 +10,7 @@ import {
   Thermometer,
   Eye,
 } from "lucide-react"
+import { supabase } from "../services/supabaseClient"
 
 function Border() {
   const [events, setEvents] = useState([])
@@ -26,6 +27,49 @@ function Border() {
     fetchWeatherIntelligence()
   }, [])
 
+  async function createNotification(title, message, notificationType) {
+    await supabase.from("notifications").insert({
+      title,
+      message,
+      notification_type: notificationType,
+      recipient_id: null,
+      is_read: false,
+    })
+  }
+
+  function getSavedNASAEventIds() {
+    const saved = localStorage.getItem("geoint_nasa_event_ids")
+    return saved ? JSON.parse(saved) : []
+  }
+
+  function saveNASAEventIds(ids) {
+    localStorage.setItem("geoint_nasa_event_ids", JSON.stringify(ids))
+  }
+
+  async function generateNASAAlerts(nasaEvents) {
+    const savedIds = getSavedNASAEventIds()
+    const newEvents = nasaEvents.filter((event) => !savedIds.includes(event.id))
+
+    if (newEvents.length > 0) {
+      const limitedEvents = newEvents.slice(0, 3)
+
+      for (const event of limitedEvents) {
+        const category =
+          event.categories?.map((item) => item.title || item.id).join(", ") ||
+          "Unknown"
+
+        await createNotification(
+          "NASA Event Detected",
+          `${event.title} detected by NASA EONET. Category: ${category}.`,
+          "nasa"
+        )
+      }
+    }
+
+    const latestIds = nasaEvents.map((event) => event.id)
+    saveNASAEventIds([...new Set([...savedIds, ...latestIds])].slice(-100))
+  }
+
   async function fetchSatelliteEvents() {
     setLoading(true)
     setMessage("")
@@ -40,7 +84,10 @@ function Border() {
       }
 
       const data = await response.json()
-      setEvents(data.events || [])
+      const nasaEvents = data.events || []
+
+      setEvents(nasaEvents)
+      await generateNASAAlerts(nasaEvents)
     } catch (error) {
       setMessage(error.message)
     }
@@ -62,6 +109,25 @@ function Border() {
 
       const data = await response.json()
       setWeather(data)
+
+      const currentWeather = data.current
+      const currentVisibility = data.hourly?.visibility?.[0]
+      const currentCloudCover = data.hourly?.cloud_cover?.[0]
+
+      const risk = calculateOperationalRisk(
+        currentWeather?.rain,
+        currentWeather?.wind_speed_10m,
+        currentVisibility,
+        currentCloudCover
+      )
+
+      if (risk === "High" || risk === "Critical") {
+        await createNotification(
+          "Weather Operational Risk",
+          `Border sector weather risk is ${risk}. Rain: ${currentWeather?.rain ?? 0}mm, wind: ${currentWeather?.wind_speed_10m ?? 0}km/h, visibility: ${formatVisibility(currentVisibility)}.`,
+          "weather"
+        )
+      }
     } catch (error) {
       setMessage(error.message)
     }
@@ -248,7 +314,7 @@ function Border() {
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8 overflow-x-auto">
         <div className="flex items-center justify-between gap-4 mb-5">
           <div>
             <h2 className="font-bold text-lg">
@@ -256,12 +322,12 @@ function Border() {
             </h2>
 
             <p className="text-slate-500 text-sm mt-1">
-              Live open natural-event feed from NASA EONET.
+              Live open natural-event feed from NASA EONET. New NASA events are converted into realtime alerts.
             </p>
           </div>
         </div>
 
-        <table className="w-full">
+        <table className="w-full min-w-[700px]">
           <thead className="text-slate-400 border-b border-slate-700">
             <tr>
               <th className="text-left p-3">Event</th>
@@ -287,12 +353,12 @@ function Border() {
         </table>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-x-auto">
         <h2 className="font-bold text-lg mb-5">
           Border Surveillance Feed
         </h2>
 
-        <table className="w-full">
+        <table className="w-full min-w-[650px]">
           <thead className="text-slate-400 border-b border-slate-700">
             <tr>
               <th className="text-left p-3">Sector</th>

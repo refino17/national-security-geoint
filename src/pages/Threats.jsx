@@ -9,6 +9,9 @@ import {
   Eye,
   X,
   Clock,
+  Plus,
+  MapPin,
+  Target,
 } from "lucide-react"
 import { supabase } from "../services/supabaseClient"
 
@@ -465,51 +468,69 @@ function Threats() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">
-        Threat Management Center
-      </h1>
+      <section className="mb-8 rounded-3xl bg-slate-900/70 border border-white/10 p-5 md:p-7 shadow-card relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-red-500/10 rounded-full blur-3xl"></div>
 
-      <p className="text-slate-400 mb-8">
-        Create, monitor, assign and investigate operational threat records.
-      </p>
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <p className="text-red-300 text-sm font-bold mb-2 flex items-center gap-2">
+              <Target size={16} />
+              Threat Operations
+            </p>
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+              Threat Management Center
+            </h1>
+
+            <p className="text-slate-400 mt-3 max-w-3xl">
+              Create, assign, investigate and resolve operational threats with
+              evidence, timeline history, alerts and audit tracking.
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-4 min-w-[240px]">
+            <p className="text-xs text-slate-500">ACCESS MODE</p>
+            <p className="text-lg font-black text-emerald-300 mt-1">
+              {canCreate ? "Operations Enabled" : "Read Only"}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="grid md:grid-cols-4 gap-5 mb-8">
-        <Card icon={<AlertTriangle />} title="Total Threats" value={threats.length} color="text-red-400" />
-        <Card icon={<Shield />} title="Open Cases" value={openCount} color="text-yellow-400" />
-        <Card icon={<Activity />} title="Critical Priority" value={criticalCount} color="text-orange-400" />
-        <Card icon={<UserCheck />} title="Assigned Cases" value={assignedCount} color="text-emerald-400" />
+        <Card icon={<AlertTriangle />} title="Total Threats" value={threats.length} color="text-red-300" />
+        <Card icon={<Shield />} title="Open Cases" value={openCount} color="text-yellow-300" />
+        <Card icon={<Activity />} title="Critical Priority" value={criticalCount} color="text-orange-300" />
+        <Card icon={<UserCheck />} title="Assigned Cases" value={assignedCount} color="text-emerald-300" />
       </div>
 
       {message && (
-        <div className="bg-slate-900 border border-slate-700 text-slate-300 p-3 rounded-xl mb-6 text-sm">
+        <div className="bg-slate-900/80 border border-white/10 text-slate-300 p-4 rounded-2xl mb-6 text-sm shadow-card">
           {message}
         </div>
       )}
 
       {canCreate && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
-          <h2 className="font-bold text-lg mb-5">Create New Threat</h2>
+        <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 md:p-6 mb-8 shadow-card">
+          <h2 className="font-black text-xl mb-5 flex items-center gap-2">
+            <Plus size={20} className="text-emerald-300" />
+            Create New Threat
+          </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Threat title" className="p-3 rounded-xl bg-slate-800 text-white outline-none" />
-            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location" className="p-3 rounded-xl bg-slate-800 text-white outline-none" />
-            <input value={latitude} onChange={(e) => setLatitude(e.target.value)} placeholder="Latitude e.g. 6.5244" className="p-3 rounded-xl bg-slate-800 text-white outline-none" />
-            <input value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="Longitude e.g. 3.3792" className="p-3 rounded-xl bg-slate-800 text-white outline-none" />
+            <FormInput value={title} onChange={setTitle} placeholder="Threat title" />
+            <FormInput value={location} onChange={setLocation} placeholder="Location" />
+            <FormInput value={latitude} onChange={setLatitude} placeholder="Latitude e.g. 6.5244" />
+            <FormInput value={longitude} onChange={setLongitude} placeholder="Longitude e.g. 3.3792" />
 
-            <select value={priority} onChange={(e) => setPriority(e.target.value)} className="p-3 rounded-xl bg-slate-800 text-white outline-none">
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-              <option>Critical</option>
-            </select>
+            <Select value={priority} onChange={setPriority} options={["Low", "Medium", "High", "Critical"]} />
+            <Select value={status} onChange={setStatus} options={["Open", "Investigating", "Resolved"]} />
 
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-3 rounded-xl bg-slate-800 text-white outline-none">
-              <option>Open</option>
-              <option>Investigating</option>
-              <option>Resolved</option>
-            </select>
-
-            <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className="p-3 rounded-xl bg-slate-800 text-white outline-none md:col-span-2">
+            <select
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60 md:col-span-2"
+            >
               <option value="">Assign to agent</option>
               {profiles.map((profile) => (
                 <option key={profile.id} value={profile.id}>
@@ -519,19 +540,29 @@ function Threats() {
             </select>
           </div>
 
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Threat description" className="w-full mt-4 p-3 rounded-xl bg-slate-800 text-white outline-none h-28" />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Threat description"
+            className="w-full mt-4 p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60 h-28"
+          />
 
-          <button onClick={handleCreateThreat} className="mt-4 bg-emerald-500 text-slate-950 font-bold px-6 py-3 rounded-xl hover:bg-emerald-400 transition">
+          <button
+            onClick={handleCreateThreat}
+            className="mt-4 bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black px-6 py-3 rounded-2xl hover:opacity-90 transition shadow-glow"
+          >
             Create Threat
           </button>
         </div>
       )}
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-        <h2 className="font-bold text-lg mb-5">Threat Records</h2>
+      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 md:p-6 shadow-card overflow-x-auto">
+        <h2 className="font-black text-xl mb-5">
+          Threat Records
+        </h2>
 
-        <table className="w-full">
-          <thead className="border-b border-slate-700 text-slate-400">
+        <table className="w-full min-w-[950px]">
+          <thead className="border-b border-white/10 text-slate-400">
             <tr>
               <th className="text-left p-3">Threat</th>
               <th className="text-left p-3">Location</th>
@@ -551,20 +582,27 @@ function Threats() {
               </tr>
             ) : (
               threats.map((threat) => (
-                <tr key={threat.id} className="border-b border-slate-800">
+                <tr key={threat.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                   <td className="p-3">
-                    <p className="font-semibold">{threat.title}</p>
-                    <p className="text-xs text-slate-500">{threat.description}</p>
+                    <p className="font-bold">{threat.title}</p>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xs truncate">
+                      {threat.description}
+                    </p>
                   </td>
 
-                  <td className="p-3">{threat.location}</td>
-
-                  <td className={`p-3 font-semibold ${priorityColor(threat.priority)}`}>
-                    {threat.priority}
+                  <td className="p-3 text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={15} className="text-slate-500" />
+                      {threat.location}
+                    </div>
                   </td>
 
                   <td className="p-3">
-                    <select value={threat.status} onChange={(e) => handleStatusChange(threat, e.target.value)} className="bg-slate-800 text-white p-2 rounded-lg outline-none">
+                    <Badge label={threat.priority} type={threat.priority} />
+                  </td>
+
+                  <td className="p-3">
+                    <select value={threat.status} onChange={(e) => handleStatusChange(threat, e.target.value)} className="bg-slate-950 border border-white/10 text-white p-2 rounded-xl outline-none">
                       <option>Open</option>
                       <option>Investigating</option>
                       <option>Resolved</option>
@@ -572,7 +610,7 @@ function Threats() {
                   </td>
 
                   <td className="p-3">
-                    <select value={threat.assigned_to || ""} onChange={(e) => handleAssignmentChange(threat, e.target.value)} className="bg-slate-800 text-white p-2 rounded-lg outline-none">
+                    <select value={threat.assigned_to || ""} onChange={(e) => handleAssignmentChange(threat, e.target.value)} className="bg-slate-950 border border-white/10 text-white p-2 rounded-xl outline-none">
                       <option value="">Unassigned</option>
                       {profiles.map((profile) => (
                         <option key={profile.id} value={profile.id}>
@@ -583,7 +621,7 @@ function Threats() {
                   </td>
 
                   <td className="p-3">
-                    <button onClick={() => openCase(threat)} className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-lg text-sm hover:bg-emerald-500/20 transition">
+                    <button onClick={() => openCase(threat)} className="flex items-center gap-2 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm hover:bg-emerald-500/20 transition">
                       <Eye size={15} />
                       View Case
                     </button>
@@ -596,140 +634,218 @@ function Threats() {
       </div>
 
       {selectedThreat && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold">{selectedThreat.title}</h2>
-                <p className="text-slate-400 text-sm">
-                  {selectedThreat.location} • {selectedThreat.priority} • {selectedThreat.status}
-                </p>
-              </div>
-
-              <button onClick={() => setSelectedThreat(null)} className="text-slate-400 hover:text-white">
-                <X />
-              </button>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                  <FileText size={18} />
-                  Investigation Notes
-                </h3>
-
-                <textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Write investigation note..." className="w-full p-3 rounded-xl bg-slate-800 text-white outline-none h-28 mb-4" />
-
-                <button onClick={handleAddNote} className="bg-emerald-500 text-slate-950 font-bold px-5 py-2 rounded-xl hover:bg-emerald-400 transition">
-                  Add Note
-                </button>
-
-                <div className="mt-5 space-y-3">
-                  {notes.length === 0 ? (
-                    <p className="text-slate-500 text-sm">No notes yet.</p>
-                  ) : (
-                    notes.map((note) => (
-                      <div key={note.id} className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-                        <p className="text-slate-300 text-sm">{note.note}</p>
-                        <p className="text-slate-500 text-xs mt-2">
-                          {new Date(note.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                  <Upload size={18} />
-                  Evidence Files
-                </h3>
-
-                <input value={evidenceTitle} onChange={(e) => setEvidenceTitle(e.target.value)} placeholder="Evidence title" className="w-full p-3 rounded-xl bg-slate-800 text-white outline-none mb-4" />
-
-                <input type="file" onChange={(e) => setSelectedEvidence(e.target.files[0])} className="w-full text-sm text-slate-300 mb-4" />
-
-                <button onClick={handleEvidenceUpload} disabled={uploadingEvidence} className="bg-emerald-500 text-slate-950 font-bold px-5 py-2 rounded-xl hover:bg-emerald-400 transition disabled:opacity-60">
-                  {uploadingEvidence ? "Uploading..." : "Upload Evidence"}
-                </button>
-
-                <div className="mt-5 space-y-3">
-                  {evidenceFiles.length === 0 ? (
-                    <p className="text-slate-500 text-sm">No evidence uploaded yet.</p>
-                  ) : (
-                    evidenceFiles.map((file) => (
-                      <div key={file.id} className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-slate-300 text-sm">{file.title}</p>
-                          <p className="text-slate-500 text-xs">
-                            {new Date(file.created_at).toLocaleString()}
-                          </p>
-                        </div>
-
-                        <button onClick={() => handleViewEvidence(file.file_path, file.title)} className="bg-blue-500/10 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-sm">
-                          View
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mt-6">
-              <h3 className="font-bold mb-4 flex items-center gap-2">
-                <Clock size={18} />
-                Intelligence Timeline
-              </h3>
-
-              <div className="space-y-4">
-                {timeline.length === 0 ? (
-                  <p className="text-slate-500 text-sm">
-                    No timeline events yet.
-                  </p>
-                ) : (
-                  timeline.map((event) => (
-                    <div
-                      key={event.id}
-                      className="border-l-2 border-emerald-500 pl-4 py-2"
-                    >
-                      <p className="text-emerald-400 font-semibold text-sm">
-                        {event.event_type}
-                      </p>
-
-                      <p className="text-slate-300 text-sm mt-1">
-                        {event.event_message}
-                      </p>
-
-                      <p className="text-slate-500 text-xs mt-2">
-                        {new Date(event.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CaseModal
+          selectedThreat={selectedThreat}
+          setSelectedThreat={setSelectedThreat}
+          notes={notes}
+          newNote={newNote}
+          setNewNote={setNewNote}
+          handleAddNote={handleAddNote}
+          evidenceTitle={evidenceTitle}
+          setEvidenceTitle={setEvidenceTitle}
+          setSelectedEvidence={setSelectedEvidence}
+          handleEvidenceUpload={handleEvidenceUpload}
+          uploadingEvidence={uploadingEvidence}
+          evidenceFiles={evidenceFiles}
+          handleViewEvidence={handleViewEvidence}
+          timeline={timeline}
+        />
       )}
     </div>
   )
 }
 
-function priorityColor(priority) {
-  if (priority === "Critical") return "text-red-400"
-  if (priority === "High") return "text-orange-400"
-  if (priority === "Medium") return "text-yellow-400"
-  return "text-emerald-400"
+function CaseModal({
+  selectedThreat,
+  setSelectedThreat,
+  notes,
+  newNote,
+  setNewNote,
+  handleAddNote,
+  evidenceTitle,
+  setEvidenceTitle,
+  setSelectedEvidence,
+  handleEvidenceUpload,
+  uploadingEvidence,
+  evidenceFiles,
+  handleViewEvidence,
+  timeline,
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6">
+      <div className="bg-slate-950 border border-white/10 rounded-[2rem] p-5 md:p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-card">
+        <div className="flex items-start justify-between gap-5 mb-6">
+          <div>
+            <p className="text-emerald-300 text-xs font-black mb-2">
+              CASE FILE
+            </p>
+
+            <h2 className="text-2xl md:text-3xl font-black">
+              {selectedThreat.title}
+            </h2>
+
+            <p className="text-slate-400 text-sm mt-2">
+              {selectedThreat.location} • {selectedThreat.priority} • {selectedThreat.status}
+            </p>
+          </div>
+
+          <button
+            onClick={() => setSelectedThreat(null)}
+            className="text-slate-400 hover:text-white bg-white/5 border border-white/10 p-2 rounded-xl"
+          >
+            <X />
+          </button>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Panel title="Investigation Notes" icon={<FileText size={18} />}>
+            <textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Write investigation note..." className="w-full p-4 rounded-2xl bg-slate-900 border border-white/10 text-white outline-none focus:border-emerald-400/60 h-28 mb-4" />
+
+            <button onClick={handleAddNote} className="bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl hover:opacity-90 transition">
+              Add Note
+            </button>
+
+            <div className="mt-5 space-y-3">
+              {notes.length === 0 ? (
+                <p className="text-slate-500 text-sm">No notes yet.</p>
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="bg-slate-900/80 border border-white/10 rounded-2xl p-4">
+                    <p className="text-slate-300 text-sm">{note.note}</p>
+                    <p className="text-slate-500 text-xs mt-2">
+                      {new Date(note.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </Panel>
+
+          <Panel title="Evidence Files" icon={<Upload size={18} />}>
+            <input value={evidenceTitle} onChange={(e) => setEvidenceTitle(e.target.value)} placeholder="Evidence title" className="w-full p-4 rounded-2xl bg-slate-900 border border-white/10 text-white outline-none focus:border-emerald-400/60 mb-4" />
+
+            <input type="file" onChange={(e) => setSelectedEvidence(e.target.files[0])} className="w-full text-sm text-slate-300 mb-4" />
+
+            <button onClick={handleEvidenceUpload} disabled={uploadingEvidence} className="bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl hover:opacity-90 transition disabled:opacity-60">
+              {uploadingEvidence ? "Uploading..." : "Upload Evidence"}
+            </button>
+
+            <div className="mt-5 space-y-3">
+              {evidenceFiles.length === 0 ? (
+                <p className="text-slate-500 text-sm">No evidence uploaded yet.</p>
+              ) : (
+                evidenceFiles.map((file) => (
+                  <div key={file.id} className="bg-slate-900/80 border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-slate-300 text-sm font-bold">{file.title}</p>
+                      <p className="text-slate-500 text-xs">
+                        {new Date(file.created_at).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <button onClick={() => handleViewEvidence(file.file_path, file.title)} className="bg-blue-500/10 text-blue-300 border border-blue-500/20 px-3 py-2 rounded-xl text-sm">
+                      View
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </Panel>
+        </div>
+
+        <Panel title="Intelligence Timeline" icon={<Clock size={18} />} extraClass="mt-6">
+          <div className="space-y-4">
+            {timeline.length === 0 ? (
+              <p className="text-slate-500 text-sm">
+                No timeline events yet.
+              </p>
+            ) : (
+              timeline.map((event) => (
+                <div
+                  key={event.id}
+                  className="border-l-2 border-emerald-400 pl-4 py-2"
+                >
+                  <p className="text-emerald-300 font-black text-sm">
+                    {event.event_type}
+                  </p>
+
+                  <p className="text-slate-300 text-sm mt-1">
+                    {event.event_message}
+                  </p>
+
+                  <p className="text-slate-500 text-xs mt-2">
+                    {new Date(event.created_at).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </Panel>
+      </div>
+    </div>
+  )
+}
+
+function FormInput({ value, onChange, placeholder }) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60"
+    />
+  )
+}
+
+function Select({ value, onChange, options }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60"
+    >
+      {options.map((option) => (
+        <option key={option}>{option}</option>
+      ))}
+    </select>
+  )
+}
+
+function Badge({ label, type }) {
+  const styles = {
+    Critical: "bg-red-500/10 text-red-300 border-red-500/20",
+    High: "bg-orange-500/10 text-orange-300 border-orange-500/20",
+    Medium: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20",
+    Low: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+  }
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-black border ${styles[type] || styles.Low}`}>
+      {label}
+    </span>
+  )
+}
+
+function Panel({ title, icon, children, extraClass = "" }) {
+  return (
+    <div className={`bg-slate-900/80 border border-white/10 rounded-3xl p-5 shadow-card ${extraClass}`}>
+      <h3 className="font-black mb-4 flex items-center gap-2">
+        <span className="text-emerald-300">{icon}</span>
+        {title}
+      </h3>
+
+      {children}
+    </div>
+  )
 }
 
 function Card({ icon, title, value, color }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <div className={`${color} mb-3`}>{icon}</div>
-      <p className="text-slate-400">{title}</p>
-      <h2 className="text-3xl font-bold mt-2">{value}</h2>
+    <div className="relative overflow-hidden bg-slate-900/80 border border-white/10 rounded-3xl p-5 shadow-card">
+      <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/5 rounded-full blur-2xl"></div>
+      <div className={`${color} mb-4 relative`}>{icon}</div>
+      <p className="text-slate-400 text-sm relative">{title}</p>
+      <h2 className="text-4xl font-black mt-2 relative">{value}</h2>
     </div>
   )
 }
