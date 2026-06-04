@@ -5,6 +5,7 @@ import {
   Zap,
   AlertTriangle,
   Plus,
+  Building2,
 } from "lucide-react"
 import { supabase } from "../services/supabaseClient"
 
@@ -74,9 +75,7 @@ function Infrastructure() {
       .select("*")
       .order("created_at", { ascending: false })
 
-    if (!error) {
-      setAssets(data)
-    }
+    if (!error) setAssets(data)
   }
 
   async function handleCreateAsset() {
@@ -176,116 +175,81 @@ function Infrastructure() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">
-        Critical Infrastructure Protection
-      </h1>
+      <section className="mb-8 rounded-3xl bg-slate-900/70 border border-white/10 p-5 md:p-7 shadow-card relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-yellow-500/10 rounded-full blur-3xl"></div>
 
-      <p className="text-slate-400 mb-8">
-        Monitor strategic assets, power systems, communication towers, transport networks and infrastructure risk zones using live Supabase records.
-      </p>
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <p className="text-yellow-300 text-sm font-bold mb-2 flex items-center gap-2">
+              <Building2 size={16} />
+              Infrastructure Operations
+            </p>
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+              Critical Infrastructure Protection
+            </h1>
+
+            <p className="text-slate-400 mt-3 max-w-3xl">
+              Monitor power systems, communication towers, transport hubs,
+              government facilities and strategic assets using live Supabase records.
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-4 min-w-[240px]">
+            <p className="text-xs text-slate-500">ACCESS MODE</p>
+            <p className="text-lg font-black text-emerald-300 mt-1">
+              {canCreate ? "Operations Enabled" : "Read Only"}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="grid md:grid-cols-4 gap-5 mb-8">
-        <Card icon={<RadioTower />} title="Assets Monitored" value={totalAssets} color="text-blue-400" />
-        <Card icon={<Zap />} title="Power Facilities" value={powerFacilities} color="text-yellow-400" />
-        <Card icon={<AlertTriangle />} title="Risk Alerts" value={riskAlerts} color="text-red-400" />
-        <Card icon={<ShieldCheck />} title="Secured Zones" value={securedZones} color="text-emerald-400" />
+        <Card icon={<RadioTower />} title="Assets Monitored" value={totalAssets} color="text-blue-300" />
+        <Card icon={<Zap />} title="Power Facilities" value={powerFacilities} color="text-yellow-300" />
+        <Card icon={<AlertTriangle />} title="Risk Alerts" value={riskAlerts} color="text-red-300" />
+        <Card icon={<ShieldCheck />} title="Secured Zones" value={securedZones} color="text-emerald-300" />
       </div>
 
       {message && (
-        <div className="bg-slate-900 border border-slate-700 text-slate-300 p-3 rounded-xl mb-6 text-sm">
+        <div className="bg-slate-900/80 border border-white/10 text-slate-300 p-4 rounded-2xl mb-6 text-sm shadow-card">
           {message}
         </div>
       )}
 
       {canCreate && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
-          <h2 className="font-bold text-lg mb-5 flex items-center gap-2">
-            <Plus size={18} />
+        <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 md:p-6 mb-8 shadow-card">
+          <h2 className="font-black text-xl mb-5 flex items-center gap-2">
+            <Plus size={20} className="text-emerald-300" />
             Add Infrastructure Asset
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <input
-              value={assetName}
-              onChange={(e) => setAssetName(e.target.value)}
-              placeholder="Asset name"
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            />
-
-            <input
-              value={zone}
-              onChange={(e) => setZone(e.target.value)}
-              placeholder="Zone e.g. Central Zone"
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            />
-
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            >
-              <option>General</option>
-              <option>Power Facility</option>
-              <option>Communication Tower</option>
-              <option>Transport Network</option>
-              <option>Water Facility</option>
-              <option>Government Facility</option>
-            </select>
-
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            >
-              <option>Protected</option>
-              <option>Secured</option>
-              <option>Monitoring</option>
-              <option>Risk Alert</option>
-              <option>Offline</option>
-            </select>
-
-            <select
-              value={riskLevel}
-              onChange={(e) => setRiskLevel(e.target.value)}
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-              <option>Critical</option>
-            </select>
-
-            <input
-              value={latitude}
-              onChange={(e) => setLatitude(e.target.value)}
-              placeholder="Latitude optional"
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            />
-
-            <input
-              value={longitude}
-              onChange={(e) => setLongitude(e.target.value)}
-              placeholder="Longitude optional"
-              className="p-3 rounded-xl bg-slate-800 text-white outline-none"
-            />
+            <FormInput value={assetName} onChange={setAssetName} placeholder="Asset name" />
+            <FormInput value={zone} onChange={setZone} placeholder="Zone e.g. Central Zone" />
+            <Select value={category} onChange={setCategory} options={["General", "Power Facility", "Communication Tower", "Transport Network", "Water Facility", "Government Facility"]} />
+            <Select value={status} onChange={setStatus} options={["Protected", "Secured", "Monitoring", "Risk Alert", "Offline"]} />
+            <Select value={riskLevel} onChange={setRiskLevel} options={["Low", "Medium", "High", "Critical"]} />
+            <FormInput value={latitude} onChange={setLatitude} placeholder="Latitude optional" />
+            <FormInput value={longitude} onChange={setLongitude} placeholder="Longitude optional" />
           </div>
 
           <button
             onClick={handleCreateAsset}
-            className="mt-4 bg-emerald-500 text-slate-950 font-bold px-6 py-3 rounded-xl hover:bg-emerald-400 transition"
+            className="mt-4 bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black px-6 py-3 rounded-2xl hover:opacity-90 transition shadow-glow"
           >
             Add Infrastructure Record
           </button>
         </div>
       )}
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-x-auto">
-        <h2 className="font-bold text-lg mb-5">
+      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 md:p-6 shadow-card overflow-x-auto">
+        <h2 className="font-black text-xl mb-5">
           Infrastructure Security Feed
         </h2>
 
-        <table className="w-full min-w-[900px]">
-          <thead className="border-b border-slate-700 text-slate-400">
+        <table className="w-full min-w-[950px]">
+          <thead className="border-b border-white/10 text-slate-400">
             <tr>
               <th className="text-left p-3">Asset</th>
               <th className="text-left p-3">Category</th>
@@ -324,38 +288,14 @@ function Infrastructure() {
   )
 }
 
-function Card({ icon, title, value, color }) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <div className={`${color} mb-3`}>
-        {icon}
-      </div>
-
-      <p className="text-slate-400">
-        {title}
-      </p>
-
-      <h2 className="text-3xl font-bold mt-2">
-        {value}
-      </h2>
-    </div>
-  )
-}
-
 function Row({ asset, onStatusChange, onRiskChange }) {
   return (
-    <tr className="border-b border-slate-800">
-      <td className="p-3">
-        {asset.asset_name}
-      </td>
+    <tr className="border-b border-white/5 hover:bg-white/[0.03]">
+      <td className="p-3 font-bold">{asset.asset_name}</td>
 
-      <td className="p-3 text-slate-300">
-        {asset.category}
-      </td>
+      <td className="p-3 text-slate-300">{asset.category}</td>
 
-      <td className="p-3">
-        {asset.zone}
-      </td>
+      <td className="p-3 text-slate-300">{asset.zone}</td>
 
       <td className="p-3 text-slate-400 text-sm">
         {asset.latitude && asset.longitude
@@ -363,11 +303,11 @@ function Row({ asset, onStatusChange, onRiskChange }) {
           : "Not set"}
       </td>
 
-      <td className={`p-3 font-semibold ${riskColor(asset.risk_level)}`}>
+      <td className="p-3">
         <select
           value={asset.risk_level || "Low"}
           onChange={(e) => onRiskChange(e.target.value)}
-          className="bg-slate-800 text-white p-2 rounded-lg outline-none"
+          className={`bg-slate-950 border border-white/10 p-2 rounded-xl outline-none ${riskColor(asset.risk_level)}`}
         >
           <option>Low</option>
           <option>Medium</option>
@@ -380,7 +320,7 @@ function Row({ asset, onStatusChange, onRiskChange }) {
         <select
           value={asset.status || "Protected"}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="bg-slate-800 text-white p-2 rounded-lg outline-none"
+          className="bg-slate-950 border border-white/10 text-white p-2 rounded-xl outline-none"
         >
           <option>Protected</option>
           <option>Secured</option>
@@ -393,11 +333,47 @@ function Row({ asset, onStatusChange, onRiskChange }) {
   )
 }
 
+function FormInput({ value, onChange, placeholder }) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60"
+    />
+  )
+}
+
+function Select({ value, onChange, options }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 text-white outline-none focus:border-emerald-400/60"
+    >
+      {options.map((option) => (
+        <option key={option}>{option}</option>
+      ))}
+    </select>
+  )
+}
+
 function riskColor(risk) {
-  if (risk === "Critical") return "text-red-400"
-  if (risk === "High") return "text-orange-400"
-  if (risk === "Medium") return "text-yellow-400"
-  return "text-emerald-400"
+  if (risk === "Critical") return "text-red-300"
+  if (risk === "High") return "text-orange-300"
+  if (risk === "Medium") return "text-yellow-300"
+  return "text-emerald-300"
+}
+
+function Card({ icon, title, value, color }) {
+  return (
+    <div className="relative overflow-hidden bg-slate-900/80 border border-white/10 rounded-3xl p-5 shadow-card">
+      <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/5 rounded-full blur-2xl"></div>
+      <div className={`${color} mb-4 relative`}>{icon}</div>
+      <p className="text-slate-400 text-sm relative">{title}</p>
+      <h2 className="text-4xl font-black mt-2 relative">{value}</h2>
+    </div>
+  )
 }
 
 export default Infrastructure
