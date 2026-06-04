@@ -1,16 +1,95 @@
-# React + Vite
+# GEOINT Secure Command Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack geospatial intelligence and national-security operations platform built with React, Supabase, Vercel, NASA EONET, Open-Meteo, and realtime PostgreSQL subscriptions.
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+https://national-security-geoint.vercel.app/
 
-## React Compiler
+## Overview
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+GEOINT Secure Command Platform is a web-based intelligence dashboard for monitoring threats, managing operational reports, visualizing geospatial activity, tracking audit logs, and coordinating security workflows in real time.
 
-## Expanding the ESLint configuration
+## Screenshots
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+![Login](./screenshots/login.png)
+![Dashboard](./screenshots/dashboard.png)
+![Threat Management](./screenshots/threat-management.png)
+![Analytics](./screenshots/analytics.png)
+![map-view](./screenshots/map-view.png)
+
+## Key Features
+
+- Secure login with Supabase Auth
+- Role-based access control: Admin, Analyst, Viewer
+- Admin-created user accounts via Supabase Edge Function
+- Threat creation, assignment, status tracking, and investigation notes
+- Evidence upload using Supabase Storage
+- Intelligence report management and classification
+- Realtime notifications with Supabase Realtime
+- Audit logging for accountability
+- Analytics dashboard with charts and operational metrics
+- Border intelligence with NASA EONET and Open-Meteo
+- Maritime, airspace, and critical infrastructure monitoring
+- Responsive command-center UI
+
+## Tech Stack
+
+| Layer | Technology |
+
+| Frontend | React, Vite |
+| Styling | Tailwind CSS |
+| Backend | Supabase |
+| Database | PostgreSQL |
+| Authentication | Supabase Auth |
+| Storage | Supabase Storage |
+| Realtime | Supabase Realtime |
+| Serverless | Supabase Edge Functions |
+| Deployment | Vercel |
+| External Data | NASA EONET, Open-Meteo |
+
+## Architecture
+
+React Frontend
+   |
+   |-- Supabase Auth
+   |-- Supabase PostgreSQL
+   |-- Supabase Storage
+   |-- Supabase Realtime
+   |-- Supabase Edge Functions
+   |
+External Intelligence APIs
+   |-- NASA EONET
+   |-- Open-Meteo
+
+
+# Roles and Permissions
+
+Role	Permissions
+
+Admin:	Create users, manage roles, approve reports, delete reports, manage all data
+Analyst:	Create threats, upload evidence, create reports, investigate assigned cases
+Viewer:	Read-only access
+
+
+# Local Setup
+git clone https://github.com/refino17/national-security-geoint.git
+cd national-security-geoint
+npm install
+
+
+## Run locally:
+
+npm run dev
+
+## Build for production:
+
+npm run build
+
+# Status
+
+Production deployed on Vercel.
+
+# Author
+
+Built by Promise Esemuede 
