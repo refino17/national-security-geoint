@@ -86,6 +86,10 @@ npm run dev
 
 npm run build
 
+# ACCOUNT LOGIN DETAILS
+email: promise@gmail.com
+password: password
+
 # Status
 
 Production deployed on Vercel.
